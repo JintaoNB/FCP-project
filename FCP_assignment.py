@@ -132,6 +132,19 @@ def test_networks():
 This section contains code for the Ising Model - task 1 in the assignment
 ==============================================================================================================
 '''
+def create_population(pos_probability, rows, columns):
+	population = np.zeros((rows, columns), dtype = np.int8)
+	#sets probability of being positive as 0.5 and creates an array of 1s and -1s using this probability
+	for i in range(rows):
+		for j in range(columns):
+			chance = random.random()
+			if chance < pos_probability:
+			 	population[i,j] = 1
+			else: 
+				population[i,j] = -1
+
+	return population
+
 
 def calculate_agreement(population, row, col, external=0.0):
 	'''
@@ -143,10 +156,22 @@ def calculate_agreement(population, row, col, external=0.0):
 	Returns:
 			change_in_agreement (float)
 	'''
+		#sets original agreement value to 0 and initialises the 'person' randomly picked as a value according to the row and column placement
+	agreement = 0
+	value = population[row, col]
+	# makes a list of neighbours and ignores the neighbours that are out of bounds
+	neighbours = [
+	population[row-1, col] if row-1 >= 0 else None,
+	population[row+1,col] if row+1 <population.shape[0] else None,
+	population[row, col-1] if col-1 >= 0 else None,
+	population[row,col+1] if col+1 <population.shape[1] else None]
+	# loops over these neighbours and adds value onto the agreement from equation
+	for neighbour in range(len(neighbours)):
+		if neighbour is not None:
+			agreement += value *neighbour  + external * neighbour
+	
+	return agreement
 
-	#Your code for task 1 goes here
-
-	return np.random * population
 
 def ising_step(population, external=0.0):
 	'''
@@ -155,16 +180,24 @@ def ising_step(population, external=0.0):
 			external (float) - optional - the magnitude of any external "pull" on opinion
 	'''
 	
-	n_rows, n_cols = population.shape
+	new_population = np.copy(population)	
+	n_rows, n_cols = new_population.shape
 	row = np.random.randint(0, n_rows)
 	col  = np.random.randint(0, n_cols)
 
-	agreement = calculate_agreement(population, row, col, external=0.0)
+	agreement = calculate_agreement(new_population, row, col, external=0.0)
+
+	#using probability part
 
 	if agreement < 0:
-		population[row, col] *= -1
+		random_number = random.random()
+		e = math.e
+		#p is the probability of the opinion NOT changing despite disagreement
+		p = e ** -(agreement/alpha)
+		if random_number < p:
+			new_population[row, col] *= -1
+	return new_population
 
-	#Your code for task 1 goes here
 
 def plot_ising(im, population):
 	'''
@@ -246,6 +279,23 @@ This section contains code for the main function- you should write some code for
 
 def main():
 	#You should write some code for handling flags here
+	parser = argparse.ArgumentParser()
+
+	#adding the flags using argparse
+	parser.add_argument("-ising_model", action ='store_true')
+	parser.add_argument("-external", type = float, default = 0)
+	parser.add_argument("-alpha", type = float, default = 1)
+	parser.add_argument("-test_ising", action ='store_true')
+
+	#this will define the variables
+	args = parser.parse_args()
+	alpha = args.alpha
+	external = args.external 
+
+	if args.ising_model:
+		ising_main(create_population(0.5, 150, 150), alpha, external)
+
+	
 
 if __name__=="__main__":
 	main()
