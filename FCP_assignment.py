@@ -132,18 +132,15 @@ def test_networks():
 This section contains code for the Ising Model - task 1 in the assignment
 ==============================================================================================================
 '''
-def create_population(pos_probability, rows, columns):
-	population = np.zeros((rows, columns), dtype = np.int8)
-	#sets probability of being positive as 0.5 and creates an array of 1s and -1s using this probability
-	for i in range(rows):
-		for j in range(columns):
-			chance = random.random()
-			if chance < pos_probability:
-			 	population[i,j] = 1
-			else: 
-				population[i,j] = -1
 
-	return population
+def get_neighbours_opinions(population, i, j):
+	n, m = population.shape
+	neighbours = []
+	neighbours.append(population[i-1,j])
+	neighbours.append(population[(i+1)%n ,j])
+	neighbours.append(population[i,j-1])
+	neighbours.append(population[i,(j+1)%m])
+	return neighbours
 
 
 def calculate_agreement(population, row, col, external=0.0):
@@ -156,56 +153,54 @@ def calculate_agreement(population, row, col, external=0.0):
 	Returns:
 			change_in_agreement (float)
 	'''
-		#sets original agreement value to 0 and initialises the 'person' randomly picked as a value according to the row and column placement
+	#sets original agreement value to 0 and initialises the 'person' randomly picked as a value according to the row and column placement
 	agreement = 0
 	value = population[row, col]
 	# makes a list of neighbours and ignores the neighbours that are out of bounds
-	neighbours = [
-	population[row-1, col] if row-1 >= 0 else None,
-	population[row+1,col] if row+1 <population.shape[0] else None,
-	population[row, col-1] if col-1 >= 0 else None,
-	population[row,col+1] if col+1 <population.shape[1] else None]
+	neighbour_ops = get_neighbours_opinions(population, row, col)
 	# loops over these neighbours and adds value onto the agreement from equation
-	for neighbour in range(len(neighbours)):
-		if neighbour is not None:
-			agreement += value *neighbour  + external * neighbour
-	
+	for opinion in neighbour_ops:	
+		agreement += value *opinion  
+	agreement +=  external * value	
+	#return np.random * population
 	return agreement
 
 
-def ising_step(population, external=0.0):
+
+def ising_step(population, external=0.0, alpha = 1):
 	'''
 	This function will perform a single update of the Ising model
 	Inputs: population (numpy array)
 			external (float) - optional - the magnitude of any external "pull" on opinion
-	'''
-	
-	new_population = np.copy(population)	
-	n_rows, n_cols = new_population.shape
+	'''	
+	n_rows, n_cols = population.shape
 	row = np.random.randint(0, n_rows)
 	col  = np.random.randint(0, n_cols)
-
-	agreement = calculate_agreement(new_population, row, col, external=0.0)
+	agreement = calculate_agreement(population, row, col, external=0.0)
 
 	#using probability part
 
 	if agreement < 0:
+		#flips if disagreement
+		population[row, col] *= -1
+		#uses probability, if random number is less than p then flip back to original opinion
+	elif alpha:
 		random_number = random.random()
-		e = math.e
-		#p is the probability of the opinion NOT changing despite disagreement
-		p = e ** -(agreement/alpha)
+		e = math.e	
+		p = e ** (-agreement/alpha)
 		if random_number < p:
-			new_population[row, col] *= -1
-	return new_population
+			population[row, col] *= -1
 
+	#Your code for task 1 goes here
 
 def plot_ising(im, population):
 	'''
 	This function will display a plot of the Ising model
 	'''
+
 	new_im = np.array([[255 if val == -1 else 1 for val in rows] for rows in population], dtype=np.int8)
 	im.set_data(new_im)
-	plt.pause(0.1)
+	plt.pause(0.01)
 
 def test_ising():
 	'''
@@ -234,26 +229,24 @@ def test_ising():
 	population = -np.ones((3, 3))
 	assert(calculate_agreement(population,1,1,1)==3), "Test 7"
 	assert(calculate_agreement(population,1,1,-1)==5), "Test 8"
-	assert(calculate_agreement(population,1,1,10)==14), "Test 9"
-	assert(calculate_agreement(population,1,1,-10)==-6), "Test 10"
-
+	assert(calculate_agreement(population,1,1,10)==-6), "Test 9"
+	assert(calculate_agreement(population,1,1,-10)==14), "Test 10"
 	print("Tests passed")
 
 
 def ising_main(population, alpha=None, external=0.0):
     
 	fig = plt.figure()
-	x = fig.add_subplot(111)
+	ax = fig.add_subplot(111)
 	ax.set_axis_off()
 	im = ax.imshow(population, interpolation='none', cmap='RdPu_r')
 
     # Iterating an update 100 times
-    for frame in range(100):
+	for frame in range(100):
         # Iterating single steps 1000 times to form an update
-        for step in range(1000):
-        	ising_step(population, external)
-        print('Step:', frame, end='\r')
-        plot_ising(im, population)
+		for step in range(1000):
+			ising_step(population, external, alpha)
+		plot_ising(im, population)
 
 
 '''
@@ -262,13 +255,13 @@ This section contains code for the Defuant Model - task 2 in the assignment
 ==============================================================================================================
 '''
 
-def defuant_main():
+'''def defuant_main():
 	#Your code for task 2 goes here
 
 def test_defuant():
 	#Your code for task 2 goes here
 
-
+'''
 '''
 ==============================================================================================================
 This section contains code for the main function- you should write some code for handling flags here
@@ -276,7 +269,6 @@ This section contains code for the main function- you should write some code for
 '''
 
 def main():
-	#You should write some code for handling flags here
 	parser = argparse.ArgumentParser()
 
 	#adding the flags using argparse
@@ -291,7 +283,11 @@ def main():
 	external = args.external 
 
 	if args.ising_model:
-		ising_main(create_population(0.5, 150, 150), alpha, external)
+		pop = np.random.choice([-1,1],size=(100,100))
+		ising_main(pop, alpha, external)
+	if args.test_ising:
+		test_ising()
+
 
 	
 
