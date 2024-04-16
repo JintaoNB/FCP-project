@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 
 grid_length = 100
-T = 0.5  # threshold
 beta = 0.1  # coupling
+T = 0.2 # threshold
 timestep = 10000
 
 
@@ -16,7 +17,7 @@ def initialize_opinions(size):
 # Function to change opinions according to the model
 def change_opinions(opinions, T, beta, timestep):
     opinions_list = []
-    for _ in range(timestep):
+    for a in range(timestep):
         i = np.random.randint(grid_length)
         if i == 0:
             j = i + 1
@@ -66,4 +67,12 @@ def plot_opinion_dynamics(opinions_list, grid_length, timestep, step=100):
     plt.tight_layout()
     plt.show()
 
-plot_opinion_dynamics(opinions_list1, grid_length, timestep, step=100)
+def main():
+    parser.add_argument()
+    parser.add_argument()
+    parser.add_argument()
+    args = parser.parer_args()
+    plot_opinion_dynamics(opinions_list1, grid_length, timestep, step=100)
+
+if _name_ == "_main_"
+    main()
