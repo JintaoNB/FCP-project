@@ -133,6 +133,9 @@ This section contains code for the Ising Model - task 1 in the assignment
 ==============================================================================================================
 '''
 
+
+
+#This function gathers the opinions of the neighbours of one person. It checks the nighbour above, below, left and right of this person and loops round if this person is on the edge
 def get_neighbours_opinions(population, i, j):
 	n, m = population.shape
 	neighbours = []
@@ -183,15 +186,13 @@ def ising_step(population, external=0.0, alpha = 1):
 	if agreement < 0:
 		#flips if disagreement
 		population[row, col] *= -1
-		#uses probability, if random number is less than p then flip back to original opinion
+		#uses probability, if random number is less than p then flip back to original opinion, this is the stubborness part 
 	elif alpha:
 		random_number = random.random()
 		e = math.e	
 		p = e ** (-agreement/alpha)
 		if random_number < p:
 			population[row, col] *= -1
-
-	#Your code for task 1 goes here
 
 def plot_ising(im, population):
 	'''
