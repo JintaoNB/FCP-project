@@ -330,7 +330,7 @@ def plot_opinion_dynamics(opinions_list, grid_length, timestep, step=100):
             ax2.plot([t / step] * grid_length, opinions, 'r.', markersize=18, alpha=0.5)
     ax2.set_xticks(np.arange(0, timestep / step + 1, 10))
     ax2.set_xticklabels([str(int(x)) for x in np.arange(0, timestep / step + 1, 10)])
-    ax2.set_xlabel('Time Step (in hundreds)')
+    ax2.set_xlabel('Time Step')
     ax2.set_ylabel('Opinion')
     ax2.set_title('Opinion Dynamics Over Time')
     ax2.set_xlim([0, timestep / step])
