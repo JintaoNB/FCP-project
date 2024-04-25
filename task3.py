@@ -38,18 +38,6 @@ class Network:
 		mean_degree = sum(len(node.connections) for node in self.nodes) / len(self.nodes)
 		return mean_degree
 
-	def mean_clustering_coefficient(self):
-		total_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes)
-		return total_coefficient / len(self.nodes)
-
-	def get_mean_clustering(self):
-		neighbors = node.connections
-		num_possible_connections = len(neighbors) * (len(neighbors) - 1) / 2
-		if num_possible_connections == 0:
-			return 0.0
-		num_actual_connections = sum(1 for neighbor1 in neighbors for neighbor2 in neighbors if neighbor1 in neighbor2.connections)
-		return num_actual_connections / num_possible_connections
-
 	def get_mean_path_length(self):
 		total_path_length = 0
 		total_paths = 0
@@ -60,7 +48,8 @@ class Network:
 					if path_length is not None:
 						total_path_length += path_length
 						total_paths += 1
-		return total_path_length / total_paths
+		mean_path_length = total_path_length / total_paths
+		return mean_path_length
 
 	def bfs_path_length(self, start_node, end_node):
 		visited = set()
@@ -75,6 +64,20 @@ class Network:
 					queue.append((neighbor, distance + 1))
 		return None
 
+	def mean_clustering_coefficient(self):
+		total_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes)
+		mean_coefficient = total_coefficient / len(self.nodes)
+		return mean_coefficient
+
+	def get_mean_clustering(self):
+		neighbors = node.connections
+		num_possible_connections = len(neighbors) * (len(neighbors) - 1) / 2
+		if num_possible_connections == 0:
+			return 0
+		num_actual_connections = sum(1 for neighbor1 in neighbors for neighbor2 in neighbors if neighbor1 in neighbor2.connections)
+		mean_clustering = num_actual_connections / num_possible_connections
+		return mean_clustering
+
 	def plot_network(self):
 		pass
 
@@ -82,10 +85,6 @@ def test_networks():
 	print('Testing networks...')
 
 def main():
-	parser = argparse.ArgumentParser(description="Network simulation with flag handling")
-	parser.add_argument("-test_networks", action="store_true", help="Test networks")
-	parser.add_argument("-network", "--network_size", type=int, help="Size of the network")
-	args = parser.parse_args()
 	if args.test_networks:
 		test_networks()
 	elif args.network_size:
@@ -101,4 +100,8 @@ def main():
 	# network.plot_network()
 
 if __name__ == "__main__":
+	parser = argparse.ArgumentParser(description="Network simulation with flag handling")
+	parser.add_argument("-test_networks", action="store_true", help="Test networks")
+	parser.add_argument("-network", "--network_size", type=int, help="Size of the network")
+	args = parser.parse_args()
 	main()
