@@ -1,6 +1,11 @@
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import random
+import argparse
+import sys
+
 
 class Node:
 
@@ -12,7 +17,7 @@ class Node:
 
 class Network: 
 
-	def __init__(self, nodes=None):
+        def __init__(self, nodes=None):
 
 		if nodes is None:
 			self.nodes = []
@@ -47,10 +52,37 @@ class Network:
 					self.nodes[neighbour_index].connections[index] = 1
 
 	def make_ring_network(self, N, neighbour_range=1):
-		#Your code  for task 4 goes here
+	    self.nodes = []
+            for node_number in range(N):
+                value = np.random.random()
+                connections = [0 for _ in range(N)]
+                self.nodes.append(Node(value, node_number, connections))
+
+		
+	    for (index, node) in enumerate(self.nodes):
+                for offset in range(-neighbour_range, neighbour_range + 1):
+                    if offset != 0:  # Skip connecting a node to itself
+                        neighbour_index = (index + offset) % N
+                        node.connections[neighbour_index] = 1
+                        self.nodes[neighbour_index].connections[index] = 1
 
 	def make_small_world_network(self, N, re_wire_prob=0.2):
-		#Your code for task 4 goes here
+		
+	    self.make_ring_network(N, neighbour_range=2)
+
+            for node_index in range(len(self.nodes)):
+                node = self.nodes[node_index]
+                connection_inds = [ind for ind in range(N) if node.connections[ind] == 1]
+                for connection_ind in connection_inds:
+                    if np.random.random() < re_wire_prob:
+                        # this removes the connection
+                        node.connections[connection_ind] = 0
+                        self.nodes[connection_ind].connections[node_index] = 0
+
+                        random_index = np.random.choice(
+                            [idx for idx in range(N) if idx != node_index and idx not in connection_inds])
+                        self.nodes[random_index].connections[node_index] = 1
+                        node.connections[random_index] = 1
 
 	def plot(self):
 
@@ -194,6 +226,7 @@ def ising_step(population, external=0.0, alpha = 1):
 		if random_number < p:
 			population[row, col] *= -1
 
+
 def plot_ising(im, population):
 	'''
 	This function will display a plot of the Ising model
@@ -202,6 +235,7 @@ def plot_ising(im, population):
 	new_im = np.array([[255 if val == -1 else 1 for val in rows] for rows in population], dtype=np.int8)
 	im.set_data(new_im)
 	plt.pause(0.01)
+	
 
 def test_ising():
 	'''
@@ -236,18 +270,17 @@ def test_ising():
 
 
 def ising_main(population, alpha=None, external=0.0):
-    
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	ax.set_axis_off()
-	im = ax.imshow(population, interpolation='none', cmap='RdPu_r')
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_axis_off()
+    im = ax.imshow(population, interpolation='none', cmap='RdPu_r')
 
     # Iterating an update 100 times
-	for frame in range(100):
+    for frame in range(100):
         # Iterating single steps 1000 times to form an update
-		for step in range(1000):
-			ising_step(population, external, alpha)
-		plot_ising(im, population)
+	for step in range(1000):
+		ising_step(population, external, alpha)
+	plot_ising(im, population)
 
 
 '''
@@ -255,10 +288,6 @@ def ising_main(population, alpha=None, external=0.0):
 This section contains code for the Defuant Model - task 2 in the assignment
 ==============================================================================================================
 '''
-
-import numpy as np
-import matplotlib.pyplot as plt
-import argparse
 
 grid_length = 100 # 100 neighbours
 timestep = 10000 # It is 10000 because 100 neighbour runs 100 times
@@ -307,6 +336,7 @@ def plot_opinion_dynamics(opinions_list, grid_length, timestep, step=100):
     ax2.set_xlim([0, timestep / step])
     plt.tight_layout()
     plt.show()
+	
 # the total function for last 3 functions
 def defuant_main(T, beta):
     opinions = initialize_opinions(grid_length)
