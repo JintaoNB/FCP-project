@@ -37,34 +37,37 @@ class Network:
 					num_actual_connections += 1
 		return num_actual_connections / num_possible_connections
 
-	def get_mean_clustering(self):
+	def get_clustering(self):
 		mean_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes) / len(self.nodes)
 		return mean_coefficient
 
-	def get_mean_path_length(self):
-		num_nodes = len(self.nodes)
-		path_lengths = [[float('inf') if i != j else 0 for j in range(num_nodes)] for i in range(num_nodes)]
+	def bfs_path_length(self, start_node, end_node):
+		visited = set()
+		queue = [(start_node, 0)]
+		while queue:
+			current_node, distance = queue.pop(0)
+			if current_node == end_node:
+				return distance
+			visited.add(current_node)
+			for neighbor in self.get_neighbors(current_node):
+				if neighbor not in visited:
+					queue.append((neighbor, distance + 1))
+		return None
 
-		# Set the distance for the direct connections.
+	def get_neighbors(self, node):
+		return [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
+
+	def get_path_length(self):
+		total_path_length = 0
+		total_paths = 0
 		for node in self.nodes:
-			for neighbor_index, connected in enumerate(node.connections):
-				if connected:
-					path_lengths[node.index][neighbor_index]=1
-
-		# Implement the Floyd-Warshall algorithm to calculate the shortest distances between all pairs of node
-		for k in range(num_nodes):
-			for i in range(num_nodes):
-				for j in range(num_nodes):
-					path_lengths[i][j] = min(path_lengths[i][j], path_lengths[i][k] + path_lengths[k][j])
-
-		# Compute the mean path length.
-		total_path_length = sum(
-			sum(row[i] for i in range(num_nodes) if row[i] != float('inf')) for row in path_lengths)
-		count_paths = sum(
-			1 for row in path_lengths for i in range(num_nodes) if row[i] != float('inf') and i != row.index)
-
-		mean_path_length = total_path_length / count_paths
-		return mean_path_length
+			for other_node in self.nodes:
+				if node != other_node:
+					path_length = self.bfs_path_length(node, other_node)
+					if path_length is not None:
+						total_path_length += path_length
+						total_paths += 1
+		return total_path_length / total_paths
 
 	def make_random_network(self, N, connection_probability):
 		self.nodes = []
@@ -131,13 +134,13 @@ def main(args):
 		test_networks()
 	elif args.network_size:
 		network = Network()
-		network.create_random_network(args.network_size, 0.5)
-		mean_degree = network.mean_degree()
-		average_path_length = network.mean_path_length()
-		clustering_coefficient = network.mean_clustering_coefficient()
+		network.make_random_network(args.network_size, 0.5)
+		mean_degree = network.get_mean_degree()
+		average_path_length = network.get_path_length()
+		mean_clustering_coefficient = network.get_clustering()
 		print(f"Mean degree: {mean_degree}")
 		print(f"Average path length: {average_path_length}")
-		print(f"Clustering coefficient: {clustering_coefficient}")
+		print(f"Clustering coefficient: {mean_clustering_coefficient}")
 	# Uncomment below to plot the network
 	# network.plot_network()
 
