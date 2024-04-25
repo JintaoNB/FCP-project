@@ -21,22 +21,13 @@ class Network:
 	def add_node(self, node):
 		self.nodes.append(node)
 
-	def create_random_network(self, size, prob_connection):
-		# Create nodes
-		for i in range(size):
-			self.add_node(Node(value=i, number=i))
-
-		for node in self.nodes:
-			for other_node in self.nodes:
-				if node != other_node and np.random.rand() < prob_connection:
-					if node.connections is None:
-						node.connections = [other_node]
-					else:
-						node.connections.append(other_node)
-
 	def get_mean_degree(self):
 		mean_degree = sum(len(node.connections) for node in self.nodes) / len(self.nodes)
 		return mean_degree
+
+	def get_mean_clustering(self):
+		mean_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes) / len(self.nodes)
+		return mean_coefficient
 
 	def get_mean_path_length(self):
 		total_path_length = 0
@@ -51,9 +42,18 @@ class Network:
 		mean_path_length = total_path_length / total_paths
 		return mean_path_length
 
-	def get_mean_clustering(self):
-		mean_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes) / len(self.nodes)
-		return mean_coefficient
+	def make_random_network(self, N, connection_probability):
+		self.nodes = []
+		for node_number in range(N):
+			value = np.random.random()
+			connections = [0 for _ in range(N)]
+			self.nodes.append(Node(value, node_number, connections))
+
+		for (index, node) in enumerate(self.nodes):
+			for neighbour_index in range(index+1, N):
+				if np.random.random() < connection_probability:
+					node.connections[neighbour_index] = 1
+					self.nodes[neighbour_index].connections[index] = 1
 
 def test_networks():
 	nodes = []
@@ -102,7 +102,7 @@ def test_networks():
 	print("All tests passed")
 
 
-def main():
+def main(args):
 	if args.test_networks:
 		test_networks()
 	elif args.network_size:
@@ -122,4 +122,4 @@ if __name__ == "__main__":
 	parser.add_argument("-test_networks", action="store_true", help="Test networks")
 	parser.add_argument("-network", "--network_size", type=int, help="Size of the network")
 	args = parser.parse_args()
-	main()
+	main(args)
