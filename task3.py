@@ -51,38 +51,56 @@ class Network:
 		mean_path_length = total_path_length / total_paths
 		return mean_path_length
 
-	def bfs_path_length(self, start_node, end_node):
-		visited = set()
-		queue = [(start_node, 0)]
-		while queue:
-			current_node, distance = queue.pop(0)
-			if current_node == end_node:
-				return distance
-			visited.add(current_node)
-			for neighbor in current_node.connections:
-				if neighbor not in visited:
-					queue.append((neighbor, distance + 1))
-		return None
-
-	def mean_clustering_coefficient(self):
-		total_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes)
-		mean_coefficient = total_coefficient / len(self.nodes)
+	def get_mean_clustering(self):
+		mean_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes) / len(self.nodes)
 		return mean_coefficient
 
-	def get_mean_clustering(self):
-		neighbors = node.connections
-		num_possible_connections = len(neighbors) * (len(neighbors) - 1) / 2
-		if num_possible_connections == 0:
-			return 0
-		num_actual_connections = sum(1 for neighbor1 in neighbors for neighbor2 in neighbors if neighbor1 in neighbor2.connections)
-		mean_clustering = num_actual_connections / num_possible_connections
-		return mean_clustering
-
-	def plot_network(self):
-		pass
-
 def test_networks():
-	print('Testing networks...')
+	nodes = []
+	num_nodes = 10
+	for node_number in range(num_nodes):
+		connections = [0 for val in range(num_nodes)]
+		connections[(node_number - 1) % num_nodes] = 1
+		connections[(node_number + 1) % num_nodes] = 1
+		new_node = Node(0, node_number, connections=connections)
+		nodes.append(new_node)
+	network = Network(nodes)
+
+	print("Testing ring network")
+	assert (network.get_mean_degree() == 2), network.get_mean_degree()
+	assert (network.get_clustering() == 0), network.get_clustering()
+	assert (network.get_path_length() == 2.777777777777778), network.get_path_length()
+
+	nodes = []
+	num_nodes = 10
+	for node_number in range(num_nodes):
+		connections = [0 for val in range(num_nodes)]
+		connections[(node_number + 1) % num_nodes] = 1
+		new_node = Node(0, node_number, connections=connections)
+		nodes.append(new_node)
+	network = Network(nodes)
+
+	print("Testing one-sided network")
+	assert (network.get_mean_degree() == 1), network.get_mean_degree()
+	assert (network.get_clustering() == 0), network.get_clustering()
+	assert (network.get_path_length() == 5), network.get_path_length()
+
+	nodes = []
+	num_nodes = 10
+	for node_number in range(num_nodes):
+		connections = [1 for val in range(num_nodes)]
+		connections[node_number] = 0
+		new_node = Node(0, node_number, connections=connections)
+		nodes.append(new_node)
+	network = Network(nodes)
+
+	print("Testing fully connected network")
+	assert (network.get_mean_degree() == num_nodes - 1), network.get_mean_degree()
+	assert (network.get_clustering() == 1), network.get_clustering()
+	assert (network.get_path_length() == 1), network.get_path_length()
+
+	print("All tests passed")
+
 
 def main():
 	if args.test_networks:
