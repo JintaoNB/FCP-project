@@ -22,7 +22,8 @@ class Network:
 		self.nodes.append(node)
 
 	def get_mean_degree(self):
-		mean_degree = sum(len(node.connections) for node in self.nodes) / len(self.nodes)
+		total_degree = sum(sum(node.connections) for node in self.nodes)
+		mean_degree = total_degree / len(self.nodes)
 		return mean_degree
 
 	def clustering_coefficient(self, node):
@@ -67,7 +68,9 @@ class Network:
 					if path_length is not None:
 						total_path_length += path_length
 						total_paths += 1
-		return total_path_length / total_paths
+		if total_paths == 0:
+			return 0
+		return round(total_path_length / total_paths, 15)
 
 	def make_random_network(self, N, connection_probability):
 		self.nodes = []
@@ -77,7 +80,7 @@ class Network:
 			self.nodes.append(Node(value, node_number, connections))
 
 		for (index, node) in enumerate(self.nodes):
-			for neighbour_index in range(index+1, N):
+			for neighbour_index in range(index + 1, N):
 				if np.random.random() < connection_probability:
 					node.connections[neighbour_index] = 1
 					self.nodes[neighbour_index].connections[index] = 1
