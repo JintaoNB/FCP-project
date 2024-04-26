@@ -1,1 +1,1 @@
-print("hello world")stupid
+print("hello world")
