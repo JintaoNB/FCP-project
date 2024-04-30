@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import random
+import argparse
+import math
 
 class Node:
 
@@ -19,14 +22,61 @@ class Network:
 		else:
 			self.nodes = nodes 
 
+	def add_node(self, node):
+		self.nodes.append(node) #maybe this
+
 	def get_mean_degree(self):
-		#Your code  for task 3 goes here
+		total_degree = sum(sum(node.connections) for node in self.nodes)
+		mean_degree = total_degree / len(self.nodes)
+		return mean_degree
 
-	def get_mean_clustering(self):
-		#Your code for task 3 goes here
+	def clustering_coefficient(self, node):
+		neighbors = [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
+		num_possible_connections = len(neighbors) * (len(neighbors) - 1) / 2
+		if num_possible_connections == 0:
+			return 0.0
+		num_actual_connections = 0
+		for i, neighbor1 in enumerate(neighbors):
+			for neighbor2 in neighbors[i + 1:]:
+				if neighbor1.connections[neighbor2.index] == 1:
+					num_actual_connections += 1
+		return num_actual_connections / num_possible_connections
 
-	def get_mean_path_length(self):
-		#Your code for task 3 goes here
+	def get_clustering(self):
+		mean_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes) / len(self.nodes)
+		return mean_coefficient
+
+
+	def get_path_length(self):
+		total_path_length = 0
+		total_paths = 0
+		for node in self.nodes:
+			for other_node in self.nodes:
+				if node != other_node:
+					path_length = self.bfs_path_length(node, other_node)
+					if path_length is not None:
+						total_path_length += path_length
+						total_paths += 1
+		if total_paths == 0:
+			return 0
+		return round(total_path_length / total_paths, 15)
+
+	def get_neighbors(self, node):
+		return [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
+
+	def bfs_path_length(self, start_node, end_node):
+		visited = set()
+		queue = [(start_node, 0)]
+		while queue:
+			current_node, distance = queue.pop(0)
+			if current_node == end_node:
+				return distance
+			visited.add(current_node)
+			for neighbor in self.get_neighbors(current_node):
+				if neighbor not in visited:
+					queue.append((neighbor, distance + 1))
+		return None
+
 
 	def make_random_network(self, N, connection_probability):
 		'''
@@ -47,10 +97,39 @@ class Network:
 					self.nodes[neighbour_index].connections[index] = 1
 
 	def make_ring_network(self, N, neighbour_range=1):
-		#Your code  for task 4 goes here
+		# This function creates a ring network of nodes
+		# This initialises an epty list for the nodes to be added to, the network is created using the same methods as the random network 
+		self.nodes = []
+		for node_number in range(N):
+			value = np.random.random()
+			connections = [0 for _ in range(N)]
+			self.nodes.append(Node(value, node_number, connections))
+		# Iterates through each node in the list of nodes
+		for (index, node) in enumerate(self.nodes):
+			# Iterates throgh a range centred around the current nodes index
+			for offset in range(-neighbour_range, neighbour_range + 1):
+				if offset != 0:  # Skip connecting a node to itself
+					neighbour_index = (index + offset) % N # Calculates the index of the neighbouring node in the network
+					node.connections[neighbour_index] = 1 #  This creates a connection between the current node and its neighbour
+					self.nodes[neighbour_index].connections[index] = 1 # This creates a connection between the nieghbour and the current index
 
 	def make_small_world_network(self, N, re_wire_prob=0.2):
-		#Your code for task 4 goes here
+		# This creates a ring network of size N and range 2
+		self.make_ring_network(N, neighbour_range = 2)
+		#This iterates over each node in the node list
+		for node_index in range(len(self.nodes)):
+			node = self.nodes[node_index]
+			# This creates a list of indexes that the current node is connected to by looping through the list of connections and seperations
+			connection_inds = [ind for ind in range(N) if node.connections[ind]==1]
+			for connection_ind in connection_inds: # This iterates over each connection
+				if np.random.random() < re_wire_prob: # Implements the re-wire probability  by choosing a random number between 0 and 1, if this number is less than prob, carry out behaviour
+					#this removes the connection
+					node.connections[connection_ind] = 0 # sets the current connection between the index and neighbour to 0
+					self.nodes[connection_ind].connections[node_index] = 0 # sets the current connection between the nighbour and index to 0
+					#This then chooses a random node and creates connection between both of them
+					random_index = np.random.choice([idx for idx in range(N) if idx != node_index and idx not in connection_inds]) 
+					self.nodes[random_index].connections[node_index] = 1
+					node.connections[random_index] = 1
 
 	def plot(self):
 
@@ -80,36 +159,34 @@ class Network:
 					ax.plot((node_x, neighbour_x), (node_y, neighbour_y), color='black')
 
 def test_networks():
-
-	#Ring network
 	nodes = []
 	num_nodes = 10
 	for node_number in range(num_nodes):
 		connections = [0 for val in range(num_nodes)]
-		connections[(node_number-1)%num_nodes] = 1
-		connections[(node_number+1)%num_nodes] = 1
+		connections[(node_number - 1) % num_nodes] = 1
+		connections[(node_number + 1) % num_nodes] = 1
 		new_node = Node(0, node_number, connections=connections)
 		nodes.append(new_node)
 	network = Network(nodes)
 
 	print("Testing ring network")
-	assert(network.get_mean_degree()==2), network.get_mean_degree()
-	assert(network.get_clustering()==0), network.get_clustering()
-	assert(network.get_path_length()==2.777777777777778), network.get_path_length()
+	assert (network.get_mean_degree() == 2), network.get_mean_degree()
+	assert (network.get_clustering() == 0), network.get_clustering()
+	assert (network.get_path_length() == 2.777777777777778), network.get_path_length()
 
 	nodes = []
 	num_nodes = 10
 	for node_number in range(num_nodes):
 		connections = [0 for val in range(num_nodes)]
-		connections[(node_number+1)%num_nodes] = 1
+		connections[(node_number + 1) % num_nodes] = 1
 		new_node = Node(0, node_number, connections=connections)
 		nodes.append(new_node)
 	network = Network(nodes)
 
 	print("Testing one-sided network")
-	assert(network.get_mean_degree()==1), network.get_mean_degree()
-	assert(network.get_clustering()==0),  network.get_clustering()
-	assert(network.get_path_length()==5), network.get_path_length()
+	assert (network.get_mean_degree() == 1), network.get_mean_degree()
+	assert (network.get_clustering() == 0), network.get_clustering()
+	assert (network.get_path_length() == 5), network.get_path_length()
 
 	nodes = []
 	num_nodes = 10
@@ -121,9 +198,9 @@ def test_networks():
 	network = Network(nodes)
 
 	print("Testing fully connected network")
-	assert(network.get_mean_degree()==num_nodes-1), network.get_mean_degree()
-	assert(network.get_clustering()==1),  network.get_clustering()
-	assert(network.get_path_length()==1), network.get_path_length()
+	assert (network.get_mean_degree() == num_nodes - 1), network.get_mean_degree()
+	assert (network.get_clustering() == 1), network.get_clustering()
+	assert (network.get_path_length() == 1), network.get_path_length()
 
 	print("All tests passed")
 
@@ -256,10 +333,6 @@ This section contains code for the Defuant Model - task 2 in the assignment
 ==============================================================================================================
 '''
 
-import numpy as np
-import matplotlib.pyplot as plt
-import argparse
-
 grid_length = 100 # 100 neighbours
 timestep = 10000 # It is 10000 because 100 neighbour runs 100 times
 
@@ -314,27 +387,13 @@ def defuant_main(T, beta):
     plot_opinion_dynamics(opinions_list, grid_length, timestep, step=100)
 
 # compare with 4 graphs in paper
-def test_default():
+def test_defaunt():
     defuant_main(0.5,0.5)
     defuant_main(0.1,0.5)
     defuant_main(0.5,0.1)
     defuant_main(0.1,0.2)
 
-# how to use this in terminal
-def main():
-    parser = argparse.ArgumentParser(description='Run the Defuault model with defuault parameters.')
-    parser.add_argument('-defuant', action='store_true', help='Run defuault model.')
-    parser.add_argument('-beta', default = 0.2, type=float, help='Coupling beta.')
-    parser.add_argument('-threshold', default = 0.2, type=float, help='Threshold T.')
-    parser.add_argument('-test_defuant', action='store_true', help='Run test model.')
-    args = parser.parse_args()
-    if args.defuant:
-        defuant_main(args.beta, args.threshold)
-    elif args.test_defuant:
-        test_default()
 
-if __name__ == '__main__':
-    main()
 '''
 ==============================================================================================================
 This section contains code for the main function- you should write some code for handling flags here
@@ -344,25 +403,77 @@ This section contains code for the main function- you should write some code for
 def main():
 	parser = argparse.ArgumentParser()
 
-	#adding the flags using argparse
+	#adding the flags using argparse for exercise 1
 	parser.add_argument("-ising_model", action ='store_true')
 	parser.add_argument("-external", type = float, default = 0)
 	parser.add_argument("-alpha", type = float, default = 1)
 	parser.add_argument("-test_ising", action ='store_true')
 
-	#this will define the variables
-	args = parser.parse_args()
-	alpha = args.alpha
-	external = args.external 
+	#adding flags for ex 2
+	parser.add_argument('-defuant', action='store_true', help='Run defuault model.')
+	parser.add_argument('-beta', default = 0.2, type=float, help='Coupling beta.')
+	parser.add_argument('-threshold', default = 0.2, type=float, help='Threshold T.')
+	parser.add_argument('-test_defuant', action='store_true', help='Run test model.')
 
-	if args.ising_model:
-		pop = np.random.choice([-1,1],size=(100,100))
-		ising_main(pop, alpha, external)
-	if args.test_ising:
-		test_ising()
+	#adding the flags for exercise 3
+	parser.add_argument("-test_networks", action="store_true", help="Test networks")
+	parser.add_argument("-network", "--network_size", type=int, help="Size of the network")
 
 
+	#adding the flags using argparse for exercise 4
+	parser.add_argument("-re_wire", type = float, default = 0.2)
+	parser.add_argument("-ring_network", type = int, default = 0)
+	parser.add_argument("-small_world", type = int, default = 0)
 	
 
-if __name__=="__main__":
+	#this will define the variables
+	args = parser.parse_args()
+
+	alpha = args.alpha
+	external = args.external 
+	re_wire_prob = args.re_wire
+
+	#ex 1
+	if args.ising_model:
+		pop = np.random.choice([-1,1],size=(100,100))
+		ising_main(pop, alpha, external) # runs the ising model
+	if args.test_ising:
+		test_ising() # runs the tests for ex 1
+
+	# ex 2
+	if args.defuant:
+		defuant_main(args.beta, args.threshold)
+	if args.test_defuant:
+		test_defaunt()
+	
+	# ex 3
+	if args.test_networks:
+		test_networks()
+	if args.network_size:
+		network = Network()
+		network.make_random_network(args.network_size, 0.5)
+		mean_degree = network.get_mean_degree()
+		average_path_length = network.get_path_length()
+		mean_clustering_coefficient = network.get_clustering()
+		print(f"Mean degree: {mean_degree}")
+		print(f"Average path length: {average_path_length}")
+		print(f"Clustering coefficient: {mean_clustering_coefficient}")
+	# Uncomment below to plot the network
+	# network.plot_network()
+
+	# ex 4
+	if args.ring_network:
+		network = Network()  # Create an instance of the Network class for ring network and plots the graph
+		network.make_ring_network(args.ring_network, neighbour_range=1)
+		network.plot()
+		plt.show() 
+
+	if args.small_world:
+		network = Network() # Create an instance of the Network class for small world network and plots the graph
+		network.make_small_world_network(args.small_world, re_wire_prob = args.re_wire)
+		network.plot()
+		plt.show()
+
+
+if __name__ == "__main__":
 	main()
