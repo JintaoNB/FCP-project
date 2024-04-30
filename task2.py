@@ -32,7 +32,7 @@ def plot_opinion_dynamics(opinions_list, grid_length, timestep, step=100):
     ax1.hist(opinions_list[-1], bins=10, color='blue')
     ax1.set_xlabel('Opinion')
     ax1.set_ylabel('Number')
-    ax1.set_title('Opinion Distribution at Last Time Step')
+    ax1.set_title('Opinion Distribution')
     ax1.set_xticks(np.arange(0, 1.1, 0.1))
 
     # the 2nd graph
