@@ -4,205 +4,210 @@ import matplotlib.cm as cm
 import random
 import argparse
 import math
+#from matplotlib.animation import FuncAnimation
 
 class Node:
 
-	def __init__(self, value, number, connections=None):
+    def __init__(self, value, number, connections=None):
 
-		self.index = number
-		self.connections = connections
-		self.value = value
+        self.index = number
+        self.connections = connections
+        self.value = value
+
+    def get_neighbours(self):
+        return np.where(np.array(self.connections) == 1)[0]
 
 class Network: 
 
-	def __init__(self, nodes=None):
+    def __init__(self, nodes=None):
 
-		if nodes is None:
-			self.nodes = []
-		else:
-			self.nodes = nodes 
+        if nodes is None: 
+            self.nodes = []
+        else:
+            self.nodes = nodes 
 
-	def add_node(self, node):
-		self.nodes.append(node) #maybe this
+    def add_node(self, node):
+        self.nodes.append(node) 
 
-	def get_mean_degree(self):
-		total_degree = sum(sum(node.connections) for node in self.nodes)
-		mean_degree = total_degree / len(self.nodes)
-		return mean_degree
+    def get_mean_degree(self):
+        total_degree = sum(sum(node.connections) for node in self.nodes)
+        mean_degree = total_degree / len(self.nodes)
+        return mean_degree
 
-	def clustering_coefficient(self, node):
-		neighbors = [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
-		num_possible_connections = len(neighbors) * (len(neighbors) - 1) / 2
-		if num_possible_connections == 0:
-			return 0.0
-		num_actual_connections = 0
-		for i, neighbor1 in enumerate(neighbors):
-			for neighbor2 in neighbors[i + 1:]:
-				if neighbor1.connections[neighbor2.index] == 1:
-					num_actual_connections += 1
-		return num_actual_connections / num_possible_connections
+    def clustering_coefficient(self, node):
+        neighbors = [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
+        num_possible_connections = len(neighbors) * (len(neighbors) - 1) / 2
+        if num_possible_connections == 0:
+            return 0.0
+        num_actual_connections = 0
+        for i, neighbor1 in enumerate(neighbors):
+            for neighbor2 in neighbors[i + 1:]:
+                if neighbor1.connections[neighbor2.index] == 1:
+                    num_actual_connections += 1
+        return num_actual_connections / num_possible_connections
 
-	def get_clustering(self):
-		mean_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes) / len(self.nodes)
-		return mean_coefficient
-
-
-	def get_path_length(self):
-		total_path_length = 0
-		total_paths = 0
-		for node in self.nodes:
-			for other_node in self.nodes:
-				if node != other_node:
-					path_length = self.bfs_path_length(node, other_node)
-					if path_length is not None:
-						total_path_length += path_length
-						total_paths += 1
-		if total_paths == 0:
-			return 0
-		return round(total_path_length / total_paths, 15)
-
-	def get_neighbors(self, node):
-		return [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
-
-	def bfs_path_length(self, start_node, end_node):
-		visited = set()
-		queue = [(start_node, 0)]
-		while queue:
-			current_node, distance = queue.pop(0)
-			if current_node == end_node:
-				return distance
-			visited.add(current_node)
-			for neighbor in self.get_neighbors(current_node):
-				if neighbor not in visited:
-					queue.append((neighbor, distance + 1))
-		return None
+    def get_clustering(self):
+        mean_coefficient = sum(self.clustering_coefficient(node) for node in self.nodes) / len(self.nodes)
+        return mean_coefficient
 
 
-	def make_random_network(self, N, connection_probability):
-		'''
-		This function makes a *random* network of size N.
-		Each node is connected to each other node with probability p
-		'''
+    def get_path_length(self):
+        total_path_length = 0
+        total_paths = 0
+        for node in self.nodes:
+            for other_node in self.nodes:
+                if node != other_node:
+                    path_length = self.bfs_path_length(node, other_node)
+                    if path_length is not None:
+                        total_path_length += path_length
+                        total_paths += 1
+        if total_paths == 0:
+            return 0
+        return round(total_path_length / total_paths, 15)
+    '''
+    def get_neighbors(self, node):
+        return [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
+    '''
+    def bfs_path_length(self, start_node, end_node):
+        visited = set()
+        queue = [(start_node, 0)]
+        while queue:
+            current_node, distance = queue.pop(0)
+            if current_node == end_node:
+                return distance
+            visited.add(current_node)
+            for neighbor in self.get_neighbors(current_node):
+                if neighbor not in visited:
+                    queue.append((neighbor, distance + 1))
+        return None
 
-		self.nodes = []
-		for node_number in range(N):
-			value = np.random.random()
-			connections = [0 for _ in range(N)]
-			self.nodes.append(Node(value, node_number, connections))
 
-		for (index, node) in enumerate(self.nodes):
-			for neighbour_index in range(index+1, N):
-				if np.random.random() < connection_probability:
-					node.connections[neighbour_index] = 1
-					self.nodes[neighbour_index].connections[index] = 1
+    def make_random_network(self, N, connection_probability):
+        '''
+        This function makes a *random* network of size N.
+        Each node is connected to each other node with probability p
+        '''
 
-	def make_ring_network(self, N, neighbour_range=1):
-		# This function creates a ring network of nodes
-		# This initialises an epty list for the nodes to be added to, the network is created using the same methods as the random network 
-		self.nodes = []
-		for node_number in range(N):
-			value = np.random.random()
-			connections = [0 for _ in range(N)]
-			self.nodes.append(Node(value, node_number, connections))
-		# Iterates through each node in the list of nodes
-		for (index, node) in enumerate(self.nodes):
-			# Iterates throgh a range centred around the current nodes index
-			for offset in range(-neighbour_range, neighbour_range + 1):
-				if offset != 0:  # Skip connecting a node to itself
-					neighbour_index = (index + offset) % N # Calculates the index of the neighbouring node in the network
-					node.connections[neighbour_index] = 1 #  This creates a connection between the current node and its neighbour
-					self.nodes[neighbour_index].connections[index] = 1 # This creates a connection between the nieghbour and the current index
+        self.nodes = []
+        for node_number in range(N):
+            value = np.random.random()
+            connections = [0 for _ in range(N)]
+            self.nodes.append(Node(value, node_number, connections))
 
-	def make_small_world_network(self, N, re_wire_prob=0.2):
-		# This creates a ring network of size N and range 2
-		self.make_ring_network(N, neighbour_range = 2)
-		#This iterates over each node in the node list
-		for node_index in range(len(self.nodes)):
-			node = self.nodes[node_index]
-			# This creates a list of indexes that the current node is connected to by looping through the list of connections and seperations
-			connection_inds = [ind for ind in range(N) if node.connections[ind]==1]
-			for connection_ind in connection_inds: # This iterates over each connection
-				if np.random.random() < re_wire_prob: # Implements the re-wire probability  by choosing a random number between 0 and 1, if this number is less than prob, carry out behaviour
-					#this removes the connection
-					node.connections[connection_ind] = 0 # sets the current connection between the index and neighbour to 0
-					self.nodes[connection_ind].connections[node_index] = 0 # sets the current connection between the nighbour and index to 0
-					#This then chooses a random node and creates connection between both of them
-					random_index = np.random.choice([idx for idx in range(N) if idx != node_index and idx not in connection_inds]) 
-					self.nodes[random_index].connections[node_index] = 1
-					node.connections[random_index] = 1
+        for (index, node) in enumerate(self.nodes):
+            for neighbour_index in range(index+1, N):
+                if np.random.random() < connection_probability:
+                    node.connections[neighbour_index] = 1
+                    self.nodes[neighbour_index].connections[index] = 1
 
-	def plot(self):
+    def make_ring_network(self, N, neighbour_range=1):
+        # This function creates a ring network of nodes
+        # This initialises an epty list for the nodes to be added to, the network is created using the same methods as the random network 
+        self.nodes = []
+        for node_number in range(N):
+            value = np.random.random()
+            connections = [0 for _ in range(N)]
+            self.nodes.append(Node(value, node_number, connections))
+        # Iterates through each node in the list of nodes
+        for (index, node) in enumerate(self.nodes):
+            # Iterates through a range centred around the current nodes index
+            for offset in range(-neighbour_range, neighbour_range + 1):
+                if offset != 0:  # Skip connecting a node to itself
+                    neighbour_index = (index + offset) % N # Calculates the index of the neighbouring node in the network
+                    node.connections[neighbour_index] = 1 #  This creates a connection between the current node and its neighbour
+                    self.nodes[neighbour_index].connections[index] = 1 # This creates a connection between the nieghbour and the current index
 
-		fig = plt.figure()
-		ax = fig.add_subplot(111)
-		ax.set_axis_off()
+    def make_small_world_network(self, N, re_wire_prob=0.2):
+        # This creates a ring network of size N and range 2
+        self.make_ring_network(N, neighbour_range = 2)
+        #This iterates over each node in the node list
+        for node_index in range(len(self.nodes)):
+            node = self.nodes[node_index]
+            # This creates a list of indexes that the current node is connected to by looping through the list of connections and seperations
+            connection_inds = [ind for ind in range(N) if node.connections[ind]==1]
+            for connection_ind in connection_inds: # This iterates over each connection
+                if np.random.random() < re_wire_prob: # Implements the re-wire probability  by choosing a random number between 0 and 1, if this number is less than prob, carry out behaviour
+                    #this removes the connection
+                    node.connections[connection_ind] = 0 # sets the current connection between the index and neighbour to 0
+                    self.nodes[connection_ind].connections[node_index] = 0 # sets the current connection between the nighbour and index to 0
+                    #This then chooses a random node and creates connection between both of them
+                    random_index = np.random.choice([idx for idx in range(N) if idx != node_index and idx not in connection_inds]) 
+                    self.nodes[random_index].connections[node_index] = 1
+                    node.connections[random_index] = 1
+        return self
 
-		num_nodes = len(self.nodes)
-		network_radius = num_nodes * 10
-		ax.set_xlim([-1.1*network_radius, 1.1*network_radius])
-		ax.set_ylim([-1.1*network_radius, 1.1*network_radius])
+    def plot(self):
 
-		for (i, node) in enumerate(self.nodes):
-			node_angle = i * 2 * np.pi / num_nodes
-			node_x = network_radius * np.cos(node_angle)
-			node_y = network_radius * np.sin(node_angle)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_axis_off()
 
-			circle = plt.Circle((node_x, node_y), 0.3*num_nodes, color=cm.hot(node.value))
-			ax.add_patch(circle)
+        num_nodes = len(self.nodes)
+        network_radius = num_nodes * 10
+        ax.set_xlim([-1.1*network_radius, 1.1*network_radius])
+        ax.set_ylim([-1.1*network_radius, 1.1*network_radius])
 
-			for neighbour_index in range(i+1, num_nodes):
-				if node.connections[neighbour_index]:
-					neighbour_angle = neighbour_index * 2 * np.pi / num_nodes
-					neighbour_x = network_radius * np.cos(neighbour_angle)
-					neighbour_y = network_radius * np.sin(neighbour_angle)
+        for (i, node) in enumerate(self.nodes):
+            node_angle = i * 2 * np.pi / num_nodes
+            node_x = network_radius * np.cos(node_angle)
+            node_y = network_radius * np.sin(node_angle)
 
-					ax.plot((node_x, neighbour_x), (node_y, neighbour_y), color='black')
+            circle = plt.Circle((node_x, node_y), 0.3*num_nodes, color=cm.hot(node.value))
+            ax.add_patch(circle)
+
+            for neighbour_index in range(i+1, num_nodes):
+                if node.connections[neighbour_index]:
+                    neighbour_angle = neighbour_index * 2 * np.pi / num_nodes
+                    neighbour_x = network_radius * np.cos(neighbour_angle)
+                    neighbour_y = network_radius * np.sin(neighbour_angle)
+
+                    ax.plot((node_x, neighbour_x), (node_y, neighbour_y), color='black')
 
 def test_networks():
-	nodes = []
-	num_nodes = 10
-	for node_number in range(num_nodes):
-		connections = [0 for val in range(num_nodes)]
-		connections[(node_number - 1) % num_nodes] = 1
-		connections[(node_number + 1) % num_nodes] = 1
-		new_node = Node(0, node_number, connections=connections)
-		nodes.append(new_node)
-	network = Network(nodes)
+    nodes = []
+    num_nodes = 10
+    for node_number in range(num_nodes):
+        connections = [0 for val in range(num_nodes)]
+        connections[(node_number - 1) % num_nodes] = 1
+        connections[(node_number + 1) % num_nodes] = 1
+        new_node = Node(0, node_number, connections=connections)
+        nodes.append(new_node)
+    network = Network(nodes)
 
-	print("Testing ring network")
-	assert (network.get_mean_degree() == 2), network.get_mean_degree()
-	assert (network.get_clustering() == 0), network.get_clustering()
-	assert (network.get_path_length() == 2.777777777777778), network.get_path_length()
+    print("Testing ring network")
+    assert (network.get_mean_degree() == 2), network.get_mean_degree()
+    assert (network.get_clustering() == 0), network.get_clustering()
+    assert (network.get_path_length() == 2.777777777777778), network.get_path_length()
 
-	nodes = []
-	num_nodes = 10
-	for node_number in range(num_nodes):
-		connections = [0 for val in range(num_nodes)]
-		connections[(node_number + 1) % num_nodes] = 1
-		new_node = Node(0, node_number, connections=connections)
-		nodes.append(new_node)
-	network = Network(nodes)
+    nodes = []
+    num_nodes = 10
+    for node_number in range(num_nodes):
+        connections = [0 for val in range(num_nodes)]
+        connections[(node_number + 1) % num_nodes] = 1
+        new_node = Node(0, node_number, connections=connections)
+        nodes.append(new_node)
+    network = Network(nodes)
 
-	print("Testing one-sided network")
-	assert (network.get_mean_degree() == 1), network.get_mean_degree()
-	assert (network.get_clustering() == 0), network.get_clustering()
-	assert (network.get_path_length() == 5), network.get_path_length()
+    print("Testing one-sided network")
+    assert (network.get_mean_degree() == 1), network.get_mean_degree()
+    assert (network.get_clustering() == 0), network.get_clustering()
+    assert (network.get_path_length() == 5), network.get_path_length()
 
-	nodes = []
-	num_nodes = 10
-	for node_number in range(num_nodes):
-		connections = [1 for val in range(num_nodes)]
-		connections[node_number] = 0
-		new_node = Node(0, node_number, connections=connections)
-		nodes.append(new_node)
-	network = Network(nodes)
+    nodes = []
+    num_nodes = 10
+    for node_number in range(num_nodes):
+        connections = [1 for val in range(num_nodes)]
+        connections[node_number] = 0
+        new_node = Node(0, node_number, connections=connections)
+        nodes.append(new_node)
+    network = Network(nodes)
 
-	print("Testing fully connected network")
-	assert (network.get_mean_degree() == num_nodes - 1), network.get_mean_degree()
-	assert (network.get_clustering() == 1), network.get_clustering()
-	assert (network.get_path_length() == 1), network.get_path_length()
+    print("Testing fully connected network")
+    assert (network.get_mean_degree() == num_nodes - 1), network.get_mean_degree()
+    assert (network.get_clustering() == 1), network.get_clustering()
+    assert (network.get_path_length() == 1), network.get_path_length()
 
-	print("All tests passed")
+    print("All tests passed")
 
 '''
 ==============================================================================================================
@@ -214,117 +219,117 @@ This section contains code for the Ising Model - task 1 in the assignment
 
 #This function gathers the opinions of the neighbours of one person. It checks the nighbour above, below, left and right of this person and loops round if this person is on the edge
 def get_neighbours_opinions(population, i, j):
-	n, m = population.shape
-	neighbours = []
-	neighbours.append(population[i-1,j])
-	neighbours.append(population[(i+1)%n ,j])
-	neighbours.append(population[i,j-1])
-	neighbours.append(population[i,(j+1)%m])
-	return neighbours
+    n, m = population.shape
+    neighbours = []
+    neighbours.append(population[i-1,j])
+    neighbours.append(population[(i+1)%n ,j])
+    neighbours.append(population[i,j-1])
+    neighbours.append(population[i,(j+1)%m])
+    return neighbours
 
 
 def calculate_agreement(population, row, col, external=0.0):
-	'''
-	This function should return the *change* in agreement that would result if the cell at (row, col) was to flip it's value
-	Inputs: population (numpy array)
-			row (int)
-			col (int)
-			external (float)
-	Returns:
-			change_in_agreement (float)
-	'''
-	#sets original agreement value to 0 and initialises the 'person' randomly picked as a value according to the row and column placement
-	agreement = 0
-	value = population[row, col]
-	# makes a list of neighbours and ignores the neighbours that are out of bounds
-	neighbour_ops = get_neighbours_opinions(population, row, col)
-	# loops over these neighbours and adds value onto the agreement from equation
-	for opinion in neighbour_ops:	
-		agreement += value *opinion  
-	agreement +=  external * value	
-	#return np.random * population
-	return agreement
+    '''
+    This function should return the *change* in agreement that would result if the cell at (row, col) was to flip it's value
+    Inputs: population (numpy array)
+            row (int)
+            col (int)
+            external (float)
+    Returns:
+            change_in_agreement (float)
+    '''
+    #sets original agreement value to 0 and initialises the 'person' randomly picked as a value according to the row and column placement
+    agreement = 0
+    value = population[row, col]
+    # makes a list of neighbours and ignores the neighbours that are out of bounds
+    neighbour_ops = get_neighbours_opinions(population, row, col)
+    # loops over these neighbours and adds value onto the agreement from equation
+    for opinion in neighbour_ops:   
+        agreement += value *opinion  
+    agreement +=  external * value  
+    #return np.random * population
+    return agreement
 
 
 
 def ising_step(population, external=0.0, alpha = 1):
-	'''
-	This function will perform a single update of the Ising model
-	Inputs: population (numpy array)
-			external (float) - optional - the magnitude of any external "pull" on opinion
-	'''	
-	n_rows, n_cols = population.shape
-	row = np.random.randint(0, n_rows)
-	col  = np.random.randint(0, n_cols)
-	agreement = calculate_agreement(population, row, col, external=0.0)
+    '''
+    This function will perform a single update of the Ising model
+    Inputs: population (numpy array)
+            external (float) - optional - the magnitude of any external "pull" on opinion
+    ''' 
+    n_rows, n_cols = population.shape
+    row = np.random.randint(0, n_rows)
+    col  = np.random.randint(0, n_cols)
+    agreement = calculate_agreement(population, row, col, external=0.0)
 
-	#using probability part
+    #using probability part
 
-	if agreement < 0:
-		#flips if disagreement
-		population[row, col] *= -1
-		#uses probability, if random number is less than p then flip back to original opinion, this is the stubborness part 
-	elif alpha:
-		random_number = random.random()
-		e = math.e	
-		p = e ** (-agreement/alpha)
-		if random_number < p:
-			population[row, col] *= -1
+    if agreement < 0:
+        #flips if disagreement
+        population[row, col] *= -1
+        #uses probability, if random number is less than p then flip back to original opinion, this is the stubborness part 
+    elif alpha:
+        random_number = random.random()
+        e = math.e  
+        p = e ** (-agreement/alpha)
+        if random_number < p:
+            population[row, col] *= -1
 
 def plot_ising(im, population):
-	'''
-	This function will display a plot of the Ising model
-	'''
+    '''
+    This function will display a plot of the Ising model
+    '''
 
-	new_im = np.array([[255 if val == -1 else 1 for val in rows] for rows in population], dtype=np.int8)
-	im.set_data(new_im)
-	plt.pause(0.01)
+    new_im = np.array([[255 if val == -1 else 1 for val in rows] for rows in population], dtype=np.int8)
+    im.set_data(new_im)
+    plt.pause(0.01)
 
 def test_ising():
-	'''
-	This function will test the calculate_agreement function in the Ising model
-	'''
-	print("Testing ising model calculations")
-	population = -np.ones((3, 3))
-	assert(calculate_agreement(population,1,1)==4), "Test 1"
+    '''
+    This function will test the calculate_agreement function in the Ising model
+    '''
+    print("Testing ising model calculations")
+    population = -np.ones((3, 3))
+    assert(calculate_agreement(population,1,1)==4), "Test 1"
 
-	population[1, 1] = 1.
-	assert(calculate_agreement(population,1,1)==-4), "Test 2"
+    population[1, 1] = 1.
+    assert(calculate_agreement(population,1,1)==-4), "Test 2"
 
-	population[0, 1] = 1.
-	assert(calculate_agreement(population,1,1)==-2), "Test 3"
+    population[0, 1] = 1.
+    assert(calculate_agreement(population,1,1)==-2), "Test 3"
 
-	population[1, 0] = 1.
-	assert(calculate_agreement(population,1,1)==0), "Test 4"
+    population[1, 0] = 1.
+    assert(calculate_agreement(population,1,1)==0), "Test 4"
 
-	population[2, 1] = 1.
-	assert(calculate_agreement(population,1,1)==2), "Test 5"
+    population[2, 1] = 1.
+    assert(calculate_agreement(population,1,1)==2), "Test 5"
 
-	population[1, 2] = 1.
-	assert(calculate_agreement(population,1,1)==4), "Test 6"
+    population[1, 2] = 1.
+    assert(calculate_agreement(population,1,1)==4), "Test 6"
 
-	"Testing external pull"
-	population = -np.ones((3, 3))
-	assert(calculate_agreement(population,1,1,1)==3), "Test 7"
-	assert(calculate_agreement(population,1,1,-1)==5), "Test 8"
-	assert(calculate_agreement(population,1,1,10)==-6), "Test 9"
-	assert(calculate_agreement(population,1,1,-10)==14), "Test 10"
-	print("Tests passed")
+    "Testing external pull"
+    population = -np.ones((3, 3))
+    assert(calculate_agreement(population,1,1,1)==3), "Test 7"
+    assert(calculate_agreement(population,1,1,-1)==5), "Test 8"
+    assert(calculate_agreement(population,1,1,10)==-6), "Test 9"
+    assert(calculate_agreement(population,1,1,-10)==14), "Test 10"
+    print("Tests passed")
 
 
 def ising_main(population, alpha=None, external=0.0):
     
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	ax.set_axis_off()
-	im = ax.imshow(population, interpolation='none', cmap='RdPu_r')
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_axis_off()
+    im = ax.imshow(population, interpolation='none', cmap='RdPu_r')
 
     # Iterating an update 100 times
-	for frame in range(100):
+    for frame in range(100):
         # Iterating single steps 1000 times to form an update
-		for step in range(1000):
-			ising_step(population, external, alpha)
-		plot_ising(im, population)
+        for step in range(1000):
+            ising_step(population, external, alpha)
+        plot_ising(im, population)
 
 
 '''
@@ -354,6 +359,7 @@ def change_opinions(opinions, T, beta, timestep):
             opinions[j] += beta * (opinions[i] - opinions[j])
         opinions_list.append(opinions.copy())
     return opinions_list
+
 
 # make pragh
 def plot_opinion_dynamics(opinions_list, grid_length, timestep, step=100):
@@ -393,6 +399,218 @@ def test_defaunt():
     defuant_main(0.5,0.1)
     defuant_main(0.1,0.2)
 
+'''def update_plot(frame, im, network, T, beta):
+    timestep_opinions = []
+    for node_index in range(len(network.nodes)):
+        node = network.nodes[node_index]
+        connection_inds = [ind for ind in range(len(network.nodes)) if node.connections[ind] == 1]
+        random_index = random.choice(connection_inds)
+        random_node = network.nodes[random_index]
+        random_opinion = random_node.value
+        my_opinion = node.value
+        if abs(my_opinion - random_opinion) < T:
+            my_opinion += beta * (random_opinion - my_opinion)
+            random_opinion += beta * (my_opinion - random_opinion)
+        timestep_opinions.append(my_opinion)
+    im.set_array(np.array([timestep_opinions]))
+    return im,
+def update(frame):
+    ising_step_for_network(network)
+    colours = ['red' if node.value < 0 else 'blue' for node in network.nodes]
+    scatter.set_color(colors)
+    return scatter,
+
+
+fig, ax = plt.subplots()
+ani = FuncAnimation(fig, update, frames = 100, interval = 200, blit = True)
+plt.show()
+'''
+#CODE FOR EXERCISE 5
+'''
+def network_neighbours_opinions(node, network):
+    neighbour_opinions = [network.nodes[i].value for i, connected in enumerate(node.connections) if connected ==1]
+    return neighbour_opinions
+
+def ising_step_for_network(network, external = 0.0, alpha = 1.0):
+    random_node = random.choice(network.nodes)
+    agreement = 0
+    neighbour_opinions = network_neighbours_opinions(random_node, network)
+    for opinion in neighbour_opinions:
+        agreement += random_node.value * opinion
+    agreement += external * random_node.value
+
+    if agreement < 0:
+        random_node.value *= -1
+    elif alpha:
+        random_number = random.random()
+        e = math.e
+        p = e ** (-agreement/alpha)
+        if random_number < p:
+            random_node.value *= -1
+
+
+
+def plot_network(network):
+    magnitude_of_node = 100
+    fig, axes = plt.subplots()
+    axes.set_xlim(0, 1)
+    axes.set_ylim(0, 1)
+    axes.axis('off')
+    
+    positions = {node.index: (random.random(), random.random()) for node in network.nodes}
+    for node in network.nodes:
+        for i, connected in enumerate(node.connections):
+            if connected:
+                axes.plot([positions[node.index][0], positions[i][0]], [positions[node.index][1], positions[i][1]], 'k-', lw=1)
+    
+    colors = ['green' if node.value < 0 else 'blue' for node in network.nodes]
+    scatter = axes.scatter([position[0] for position in positions.values()],[position[1] for position in positions.values()], c = colors, s = magnitude_of_node)
+    
+    def update(frame):
+        ising_step_for_network(network)
+        colors = ['green' if node.value < 0 else 'blue' for node in network.nodes]
+        scatter.set_color(colors)
+        return scatter
+    
+    ani = FuncAnimation(fig, update, frames=100, interval=200, blit=True)
+    plt.show()
+
+    def ex_5_main(network_size, threshold, beta):
+    # Create a network instance
+    network = Network(10)
+    # Make a random network with the specified size
+    network.make_random_network(network_size, 0.5)
+    # Run the Ising model simulation on the network
+    plot_network(network)
+
+
+'''
+def ising_network(ising_network_size, alpha=None, external=0):
+    '''
+    This function forms the main plot for the ising model on a network
+    Inputs:
+        ising_network_size - Number of nodes in the small world network to be analysed
+        alpha - (optional) the magnitude of the alpha value to be used in calculation
+        external - (optional) the magnitude of any external "pull" on opinion
+    '''
+
+    network = Network()
+    mean_opinions = []
+    steps = np.arange(1,11,1)
+    small_world_network = network.make_small_world_network(ising_network_size)
+    # set a random value for opinions of each node, either -1 or 1
+    for node in small_world_network.nodes:
+        node.value = random.uniform(-1, 1)
+    
+    # Iterating an update 100 times
+    for frame in range(len(steps)):
+        # Iterating single steps 1000 times to form an update
+        for step in range(1000):
+            #calling step function
+            ising_network_step(network, external, alpha)
+        #plotting each one of the 100 frames
+        mean_opinions.append(mean_opinion(network))
+        network.plot()
+        plt.show()
+
+    plt.plot(steps, mean_opinions)
+    plt.title('Mean opinions over time')
+    plt.xlabel('Steps')
+    plt.ylabel('Mean Opinion')
+    plt.show()
+
+def mean_opinion(network):
+    """
+    Calculate the mean opinion of all the nodes at each evolution step.
+    Inputs:
+        Network - A network of opinions
+    Outputs:
+        mean_opinion - The mean opinion of the network
+    """
+    total = 0
+    opinions = [node.value for node in network.nodes]
+    for opinion in opinions:
+        total += opinion
+    mean_opinion = total/len(opinions)
+
+    return mean_opinion
+
+
+def ising_network_step(network, external=0.0, alpha=1):
+    '''
+    This function will perform a single update of the Ising model
+    Inputs: network - a network of nodes with opinions
+            external (float) - optional - the magnitude of any external "pull" on opinion
+            alpha (float) - optional - the magnitude of the alpha value to be used in calculation
+    '''
+
+    node_number = np.random.randint(0, len(network.nodes))
+    node = network.nodes[node_number]
+    
+    #setting the agreement to the result of the value given after running the calculation fucntion
+    agreement = calculate_agreement_network(network, node_number, external)
+    
+    #negating the opinion of the person if the agreement is negative
+    if agreement < 0:
+        node.value *= -1
+    
+    #if opinion wasn't negated, this elif runs a random chance that they may be negated anyway
+    elif alpha:
+        #producing random number between 0 and 1
+        random_number = random.random()
+        #calculating probability of opinion flip
+        p = math.e**(-agreement/alpha)
+        #checking if random number is less than p
+        if random_number < p:
+            #negating the opinion if the random number is less than p
+            node.value *= -1
+
+
+
+def calculate_agreement_network(network, node_number, external):
+    '''
+    Function to calculate the change in agreement of a node
+    '''
+    primary_node = network.nodes[node_number]
+
+    #initializing the agreement value and opinions
+    agreement = 0
+    neighbour_opinions = []
+
+    # Find the neighbours of the node
+    neighbours = primary_node.get_neighbours()
+    for node in neighbours:
+        node = network.nodes[node]
+        neighbour_opinions.append(node.value)
+
+    #calculating the agreement
+    for opinion in neighbour_opinions:
+        #increases agreement if opinions are the same but will decrease if they oppose
+        agreement += node.value * opinion
+
+    #increases agreement using the external pull value
+    agreement += external * node.value
+
+    return agreement  
+
+
+
+
+
+    
+
+
+
+    
+
+
+
+
+
+
+
+
+
 
 '''
 ==============================================================================================================
@@ -401,90 +619,92 @@ This section contains code for the main function- you should write some code for
 '''
 
 def main():
-	parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-	#adding the flags using argparse for exercise 1
-	parser.add_argument("-ising_model", action ='store_true')
-	parser.add_argument("-external", type = float, default = 0)
-	parser.add_argument("-alpha", type = float, default = 1)
-	parser.add_argument("-test_ising", action ='store_true')
+    #adding the flags using argparse for exercise 1
+    parser.add_argument("-ising_model", action ='store_true')
+    parser.add_argument("-external", type = float, default = 0)
+    parser.add_argument("-alpha", type = float, default = 1)
+    parser.add_argument("-test_ising", action ='store_true')
 
-	#adding flags for ex 2
-	parser.add_argument('-defuant', action='store_true', help='Run defuault model.')
-	parser.add_argument('-beta', default = 0.2, type=float, help='Coupling beta.')
-	parser.add_argument('-threshold', default = 0.2, type=float, help='Threshold T.')
-	parser.add_argument('-test_defuant', action='store_true', help='Run test model.')
+    #adding flags for ex 2
+    parser.add_argument('-defuant', action='store_true', help='Run defuault model.')
+    parser.add_argument('-beta', default = 0.2, type=float, help='Coupling beta.')
+    parser.add_argument('-threshold', default = 0.2, type=float, help='Threshold T.')
+    parser.add_argument('-test_defuant', action='store_true', help='Run test model.')
 
-	#adding the flags for exercise 3
-	parser.add_argument("-test_networks", action="store_true", help="Test networks")
-	parser.add_argument("-network", "--network_size", type=int, help="Size of the network")
+    #ex 5 flags
+    parser.add_argument("-use_network", type=int, help="Size of the network for ex 5")
+
+    #adding the flags for exercise 3
+    parser.add_argument("-test_networks", action="store_true", help="Test networks")
+    parser.add_argument("-network", "--network_size", type=int, help="Size of the network")
 
 
-	#adding the flags using argparse for exercise 4
-	parser.add_argument("-re_wire", type = float, default = 0.2)
-	parser.add_argument("-ring_network", type = int, default = 0)
-	parser.add_argument("-small_world", type = int, default = 0)
-	
+    #adding the flags using argparse for exercise 4
+    parser.add_argument("-re_wire", type = float, default = 0.2)
+    parser.add_argument("-ring_network", type = int, default = 0)
+    parser.add_argument("-small_world", type = int, default = 0)
+    
 
-	#this will define the variables
-	args = parser.parse_args()
+    #this will define the variables
+    args = parser.parse_args()
 
-	alpha = args.alpha
-	external = args.external 
-	re_wire_prob = args.re_wire
+    alpha = args.alpha
+    external = args.external 
+    re_wire_prob = args.re_wire
+    ising_network_size = args.use_network
 
-	#ex 1
-	if args.ising_model:
-		if args.use_network:
-			network = Network()
-			network.make_small_world_network(args.use_network)
-			population = np.random.choice([-1, 1], size=(args.use_network, args.use_network))
-			ising_main_with_network(population, network, alpha, external)
-		else:
-			pop = np.random.choice([-1, 1], size=(100, 100))
-			ising_main(pop, alpha, external)
-	if args.test_ising:
-		test_ising() # runs the tests for ex 1
+    #ex 1
+    if args.ising_model:
+        if args.use_network:
+            ising_network(ising_network_size, alpha, external)
+            '''
+            network = Network()
+            network.make_random_network(args.use_network, 0.5)
+            plot_network(network)
+            '''
+        else:
+            pop = np.random.choice([-1,1],size=(100,100))
+            ising_main(pop, alpha, external) # runs the ising model
+    if args.test_ising:
+        test_ising() # runs the tests for ex 1
 
-	# ex 2
-	if args.defuant:
-		if args.use_network:
-			network = Network()
-			network.make_small_world_network(args.use_network)
-			defuant_main_with_network(args.threshold, args.beta, network)
-		else:
-			defuant_main(args.threshold, args.beta)
-	if args.test_defuant:
-		test_defaunt()
-	
-	# ex 3
-	if args.test_networks:
-		test_networks()
-	if args.network_size:
-		network = Network()
-		network.make_random_network(args.network_size, 0.5)
-		mean_degree = network.get_mean_degree()
-		average_path_length = network.get_path_length()
-		mean_clustering_coefficient = network.get_clustering()
-		print(f"Mean degree: {mean_degree}")
-		print(f"Average path length: {average_path_length}")
-		print(f"Clustering coefficient: {mean_clustering_coefficient}")
-	# Uncomment below to plot the network
-	# network.plot_network()
+    # ex 2
+    if args.defuant:
+        defuant_main(args.beta, args.threshold)
+    if args.test_defuant:
+        test_defaunt()
+    
+    # ex 3
+    if args.test_networks:
+        test_networks()
+    if args.network_size:
+        network = Network()
+        network.make_random_network(args.network_size, 0.5)
+        mean_degree = network.get_mean_degree()
+        average_path_length = network.get_path_length()
+        mean_clustering_coefficient = network.get_clustering()
+        print(f"Mean degree: {mean_degree}")
+        print(f"Average path length: {average_path_length}")
+        print(f"Clustering coefficient: {mean_clustering_coefficient}")
+    # Uncomment below to plot the network
+    # network
+    # ex 4
+    if args.ring_network:
+        network = Network()  # Create an instance of the Network class for ring network and plots the graph
+        network.make_ring_network(args.ring_network, neighbour_range=1)
+        network.plot()
+        plt.show() 
 
-	# ex 4
-	if args.ring_network:
-		network = Network()  # Create an instance of the Network class for ring network and plots the graph
-		network.make_ring_network(args.ring_network, neighbour_range=1)
-		network.plot()
-		plt.show() 
-
-	if args.small_world:
-		network = Network() # Create an instance of the Network class for small world network and plots the graph
-		network.make_small_world_network(args.small_world, re_wire_prob = args.re_wire)
-		network.plot()
-		plt.show()
+    if args.small_world:
+        network = Network() # Create an instance of the Network class for small world network and plots the graph
+        network.make_small_world_network(args.small_world, re_wire_prob = args.re_wire)
+        network.plot()
+        plt.show()
 
 
 if __name__ == "__main__":
-	main()
+    main()
+
+
