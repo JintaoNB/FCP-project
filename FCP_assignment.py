@@ -64,10 +64,10 @@ class Network:
         if total_paths == 0:
             return 0
         return round(total_path_length / total_paths, 15)
-    '''
+    
     def get_neighbors(self, node):
         return [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
-    '''
+    
     def bfs_path_length(self, start_node, end_node):
         visited = set()
         queue = [(start_node, 0)]
@@ -535,7 +535,7 @@ def main():
 
     #adding the flags for exercise 3
     parser.add_argument("-test_networks", action="store_true", help="Test networks")
-    parser.add_argument("-network", "--network_size", type=int, help="Size of the network")
+    parser.add_argument("-network", "-network_size", type=int, help="Size of the network")
 
 
     #adding the flags using argparse for exercise 4
