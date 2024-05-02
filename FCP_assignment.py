@@ -4,7 +4,7 @@ import matplotlib.cm as cm
 import random
 import argparse
 import math
-#from matplotlib.animation import FuncAnimation
+
 
 class Node:
 
@@ -386,6 +386,7 @@ def plot_opinion_dynamics(opinions_list, grid_length, timestep, step=100):
     ax2.set_xlim([0, timestep / step])
     plt.tight_layout()
     plt.show()
+
 # the total function for last 3 functions
 def defuant_main(T, beta):
     opinions = initialize_opinions(grid_length)
@@ -399,133 +400,12 @@ def test_defaunt():
     defuant_main(0.5,0.1)
     defuant_main(0.1,0.2)
 
-'''def update_plot(frame, im, network, T, beta):
-    timestep_opinions = []
-    for node_index in range(len(network.nodes)):
-        node = network.nodes[node_index]
-        connection_inds = [ind for ind in range(len(network.nodes)) if node.connections[ind] == 1]
-        random_index = random.choice(connection_inds)
-        random_node = network.nodes[random_index]
-        random_opinion = random_node.value
-        my_opinion = node.value
-        if abs(my_opinion - random_opinion) < T:
-            my_opinion += beta * (random_opinion - my_opinion)
-            random_opinion += beta * (my_opinion - random_opinion)
-        timestep_opinions.append(my_opinion)
-    im.set_array(np.array([timestep_opinions]))
-    return im,
-def update(frame):
-    ising_step_for_network(network)
-    colours = ['red' if node.value < 0 else 'blue' for node in network.nodes]
-    scatter.set_color(colors)
-    return scatter,
 
+#Task five
 
-fig, ax = plt.subplots()
-ani = FuncAnimation(fig, update, frames = 100, interval = 200, blit = True)
-plt.show()
-'''
-#CODE FOR EXERCISE 5
-'''
-def network_neighbours_opinions(node, network):
-    neighbour_opinions = [network.nodes[i].value for i, connected in enumerate(node.connections) if connected ==1]
-    return neighbour_opinions
-
-def ising_step_for_network(network, external = 0.0, alpha = 1.0):
-    random_node = random.choice(network.nodes)
-    agreement = 0
-    neighbour_opinions = network_neighbours_opinions(random_node, network)
-    for opinion in neighbour_opinions:
-        agreement += random_node.value * opinion
-    agreement += external * random_node.value
-
-    if agreement < 0:
-        random_node.value *= -1
-    elif alpha:
-        random_number = random.random()
-        e = math.e
-        p = e ** (-agreement/alpha)
-        if random_number < p:
-            random_node.value *= -1
-
-
-
-def plot_network(network):
-    magnitude_of_node = 100
-    fig, axes = plt.subplots()
-    axes.set_xlim(0, 1)
-    axes.set_ylim(0, 1)
-    axes.axis('off')
-    
-    positions = {node.index: (random.random(), random.random()) for node in network.nodes}
-    for node in network.nodes:
-        for i, connected in enumerate(node.connections):
-            if connected:
-                axes.plot([positions[node.index][0], positions[i][0]], [positions[node.index][1], positions[i][1]], 'k-', lw=1)
-    
-    colors = ['green' if node.value < 0 else 'blue' for node in network.nodes]
-    scatter = axes.scatter([position[0] for position in positions.values()],[position[1] for position in positions.values()], c = colors, s = magnitude_of_node)
-    
-    def update(frame):
-        ising_step_for_network(network)
-        colors = ['green' if node.value < 0 else 'blue' for node in network.nodes]
-        scatter.set_color(colors)
-        return scatter
-    
-    ani = FuncAnimation(fig, update, frames=100, interval=200, blit=True)
-    plt.show()
-
-    def ex_5_main(network_size, threshold, beta):
-    # Create a network instance
-    network = Network(10)
-    # Make a random network with the specified size
-    network.make_random_network(network_size, 0.5)
-    # Run the Ising model simulation on the network
-    plot_network(network)
-
-
-'''
-def ising_network(ising_network_size, alpha=None, external=0):
-    '''
-    This function forms the main plot for the ising model on a network
-    Inputs:
-        ising_network_size - Number of nodes in the small world network to be analysed
-        alpha - (optional) the magnitude of the alpha value to be used in calculation
-        external - (optional) the magnitude of any external "pull" on opinion
-    '''
-
-    network = Network()
-    mean_opinions = []
-    steps = np.arange(1,11,1)
-    small_world_network = network.make_small_world_network(ising_network_size)
-    # set a random value for opinions of each node, either -1 or 1
-    for node in small_world_network.nodes:
-        node.value = random.uniform(-1, 1)
-    
-    # Iterating an update 100 times
-    for frame in range(len(steps)):
-        # Iterating single steps 1000 times to form an update
-        for step in range(1000):
-            #calling step function
-            ising_network_step(network, external, alpha)
-        #plotting each one of the 100 frames
-        mean_opinions.append(mean_opinion(network))
-        network.plot()
-        plt.show()
-
-    plt.plot(steps, mean_opinions)
-    plt.title('Mean opinions over time')
-    plt.xlabel('Steps')
-    plt.ylabel('Mean Opinion')
-    plt.show()
-
-def mean_opinion(network):
+def average_opinion(network):
     """
-    Calculate the mean opinion of all the nodes at each evolution step.
-    Inputs:
-        Network - A network of opinions
-    Outputs:
-        mean_opinion - The mean opinion of the network
+    Calculate the mean opinion of all the nodes in the network at each step.
     """
     total = 0
     opinions = [node.value for node in network.nodes]
@@ -536,54 +416,26 @@ def mean_opinion(network):
     return mean_opinion
 
 
-def ising_network_step(network, external=0.0, alpha=1):
+
+
+
+def network_calculate_agreement(network, node_number, external):
     '''
-    This function will perform a single update of the Ising model
-    Inputs: network - a network of nodes with opinions
-            external (float) - optional - the magnitude of any external "pull" on opinion
-            alpha (float) - optional - the magnitude of the alpha value to be used in calculation
-    '''
-
-    node_number = np.random.randint(0, len(network.nodes))
-    node = network.nodes[node_number]
-    
-    #setting the agreement to the result of the value given after running the calculation fucntion
-    agreement = calculate_agreement_network(network, node_number, external)
-    
-    #negating the opinion of the person if the agreement is negative
-    if agreement < 0:
-        node.value *= -1
-    
-    #if opinion wasn't negated, this elif runs a random chance that they may be negated anyway
-    elif alpha:
-        #producing random number between 0 and 1
-        random_number = random.random()
-        #calculating probability of opinion flip
-        p = math.e**(-agreement/alpha)
-        #checking if random number is less than p
-        if random_number < p:
-            #negating the opinion if the random number is less than p
-            node.value *= -1
-
-
-
-def calculate_agreement_network(network, node_number, external):
-    '''
-    Function to calculate the change in agreement of a node
+    This calculates the agreement of each node with the indexed node
     '''
     primary_node = network.nodes[node_number]
 
-    #initializing the agreement value and opinions
+    #sets the agreement value to 0 and creates an empty list of neighbours opinions 
     agreement = 0
     neighbour_opinions = []
 
-    # Find the neighbours of the node
+    # Finds the neigbouring nodes
     neighbours = primary_node.get_neighbours()
     for node in neighbours:
         node = network.nodes[node]
         neighbour_opinions.append(node.value)
 
-    #calculating the agreement
+    #calculates the agreement between the indexed node and its neighbours
     for opinion in neighbour_opinions:
         #increases agreement if opinions are the same but will decrease if they oppose
         agreement += node.value * opinion
@@ -594,21 +446,66 @@ def calculate_agreement_network(network, node_number, external):
     return agreement  
 
 
+def ising_network_iteration(network, external=0.0, alpha=1):
+    '''
+    This function causes a single update of the Ising model
 
-
-
+    '''
+    # Picks a random node
+    node_number = np.random.randint(0, len(network.nodes))
+    node = network.nodes[node_number]
     
-
-
-
+    # Calls the calculate agreement function and sets this as the agreement variable
+    agreement = network_calculate_agreement(network, node_number, external)
     
+    # if the agreement is less than zero the node value will flip
+    if agreement < 0:
+        node.value *= -1
+    
+    # runs a random chance that the node's opinion will flip 
+    elif alpha:
+        # produces a random number between 0 and 1
+        random_number = random.random()
+        # calculates the probability that this nodes opinion will flip back to its original value
+        p = math.e**(-agreement/alpha)
+        #checking if random number is less than p
+        if random_number < p:
+            #changes the opinion
+            node.value *= -1
 
 
 
 
+def ising_network_opinions(ising_network_size, alpha=None, external=0):
+    '''
+    This function is the main plot for the ising model based on networks:
+    
+    '''
 
-
-
+    network = Network()
+    average_opinions = []
+    steps = np.arange(1,11,1)
+    small_world_network = network.make_small_world_network(ising_network_size)
+    # set a random value for opinions of each node, either -1 or 1
+    for node in small_world_network.nodes:
+        node.value = random.uniform(-1, 1)
+    
+    # This updates the network for a set amount of times
+    for frame in range(len(steps)):
+        # Iterating a single step 1000 times to form one update
+        for step in range(1000):
+            #This calls the iteration function
+            ising_network_iteration(network, external, alpha)
+        #plotting each one the frames
+        average_opinions.append(average_opinion(network))
+        network.plot()
+        plt.show()
+        #plots the mean opinion of the network over time
+    plt.plot(steps, average_opinions)
+    plt.title('Mean opinions of the Network over time')
+    plt.xlabel('Iterations')
+    plt.ylabel('Mean Opinion of the Network')
+    plt.show()
 
 
 
@@ -658,12 +555,8 @@ def main():
     #ex 1
     if args.ising_model:
         if args.use_network:
-            ising_network(ising_network_size, alpha, external)
-            '''
-            network = Network()
-            network.make_random_network(args.use_network, 0.5)
-            plot_network(network)
-            '''
+            ising_network_opinions(ising_network_size, alpha, external)
+           
         else:
             pop = np.random.choice([-1,1],size=(100,100))
             ising_main(pop, alpha, external) # runs the ising model
