@@ -435,14 +435,25 @@ def main():
 
 	#ex 1
 	if args.ising_model:
-		pop = np.random.choice([-1,1],size=(100,100))
-		ising_main(pop, alpha, external) # runs the ising model
+		if args.use_network:
+			network = Network()
+			network.make_small_world_network(args.use_network)
+			population = np.random.choice([-1, 1], size=(args.use_network, args.use_network))
+			ising_main_with_network(population, network, alpha, external)
+		else:
+			pop = np.random.choice([-1, 1], size=(100, 100))
+			ising_main(pop, alpha, external)
 	if args.test_ising:
 		test_ising() # runs the tests for ex 1
 
 	# ex 2
 	if args.defuant:
-		defuant_main(args.beta, args.threshold)
+		if args.use_network:
+			network = Network()
+			network.make_small_world_network(args.use_network)
+			defuant_main_with_network(args.threshold, args.beta, network)
+		else:
+			defuant_main(args.threshold, args.beta)
 	if args.test_defuant:
 		test_defaunt()
 	
