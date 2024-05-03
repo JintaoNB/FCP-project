@@ -1,3 +1,11 @@
+github link：https://github.com/JintaoNB/FCP-project.git
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import random
+import argparse
+import math
+
 Exercise 1: 
 Firstly, I created a get_neighbours_opinions function. This treats the array like a sphere by using modulos to collect the neighbours opinions for people on the edge of the array. The calculate agreement function implements the equations from the question in order to find the value of agreement of each neighbour node pair. The ising_step function defines the population. It also tests if the agreement values are less than 0, if they are the opinion of that node flips. To account for the stubborness, a proportion of these flipped nodes will flip back. This is implemented using  random.random(), if this value is less than the probability (p = exp(-agreement/alpha), the node flips back to its original value. This model passes all  the tests and produces an animation. This model is used by using the argument –ising and the value of alpha can be changed using –alpha (N), where N is the value of alpha to be set. 
 
