@@ -8,7 +8,7 @@ import math
 
 class Node:
 
-    def __init__(self, value, number, connections=None):
+    def __init__(self, value, number, connections=None): # Define the initial nodes
 
         self.index = number
         self.connections = connections
@@ -19,7 +19,7 @@ class Node:
 
 class Network: 
 
-    def __init__(self, nodes=None):
+    def __init__(self, nodes=None): # Define the initial network
 
         if nodes is None: 
             self.nodes = []
@@ -34,7 +34,7 @@ class Network:
         mean_degree = total_degree / len(self.nodes)
         return mean_degree
 
-    def clustering_coefficient(self, node):
+    def clustering_coefficient(self, node): # Get the number of triangles formed by its neighbours divided by the maximum possible number of triangles.
         neighbors = [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
         num_possible_connections = len(neighbors) * (len(neighbors) - 1) / 2
         if num_possible_connections == 0:
@@ -68,7 +68,7 @@ class Network:
     def get_neighbors(self, node):
         return [self.nodes[i] for i, connected in enumerate(node.connections) if connected]
     
-    def bfs_path_length(self, start_node, end_node):
+    def bfs_path_length(self, start_node, end_node): # Using breadth-first search
         visited = set()
         queue = [(start_node, 0)]
         while queue:
@@ -76,13 +76,13 @@ class Network:
             if current_node == end_node:
                 return distance
             visited.add(current_node)
-            for neighbor in self.get_neighbors(current_node):
+            for neighbor in self.get_neighbors(current_node): # For each node, calculate the average shortest path length to all other nodes.
                 if neighbor not in visited:
                     queue.append((neighbor, distance + 1))
         return None
 
 
-    def make_random_network(self, N, connection_probability):
+    def make_random_network(self, N, connection_probability): # Create a random network
         '''
         This function makes a *random* network of size N.
         Each node is connected to each other node with probability p
