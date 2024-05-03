@@ -535,7 +535,7 @@ def main():
 
     #adding the flags for exercise 3
     parser.add_argument("-test_networks", action="store_true", help="Test networks")
-    parser.add_argument("-network", "-network_size", type=int, help="Size of the network")
+    parser.add_argument("-network", "--network_size", type=int, help="Size of the network")
 
 
     #adding the flags using argparse for exercise 4
